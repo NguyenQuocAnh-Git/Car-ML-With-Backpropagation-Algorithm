@@ -4,17 +4,41 @@ using UnityEngine;
 
 public class NeuralNetwork {
 
-    public int hiddenLayers = 1;
-    public int size_hidden_layers = 10;
-    public int outputs = 2;
-    public int inputs = 5;
-    public float maxInitialValue = 5f;
+    // Số lượng tầng ẩn (hidden layers) trong mạng
+    // 1 nghĩa là chỉ có 1 hidden layer giữa input và output
+    public static int hiddenLayers = 1;
 
+    // Số neuron trong mỗi tầng ẩn
+    // Ví dụ: nếu =10 thì mỗi hidden layer có 10 neuron
+    public  static int size_hidden_layers = 10;
+
+    // Số lượng đầu ra của mạng
+    // Ví dụ: 2 nếu điều khiển xe thì có thể là [xoay vô-lăng, tăng tốc]
+    public static int outputs = 2;
+
+    // Số lượng đầu vào của mạng
+    // 8 raycast + Velocity(car) + rotation(car)
+    public static int inputs = 10;
+
+    // Giá trị cực đại khi khởi tạo trọng số ngẫu nhiên
+    // Mỗi weight sẽ nằm trong khoảng [-maxInitialValue, +maxInitialValue]
+    public static float maxInitialValue = 5f;
+
+    // Dùng cho hàm kích hoạt sigmoid: 1 / (1 + e^(-x))
     private const float EULER_NUMBER = 2.71828f;
+
+    // Danh sách các neuron theo tầng
+    // neurons[layer][i] = giá trị kích hoạt của neuron thứ i trong layer
     private List<List<float>> neurons;
+
+    // Danh sách các trọng số kết nối giữa các tầng
+    // weights[layer][i][j] = trọng số nối từ neuron i (layer hiện tại)
+    //                        tới neuron j (layer kế tiếp)
     private List<float[][]> weights;
 
-    private int totalLayers = 0; 
+    // Tổng số tầng của mạng (input + hidden + output)
+    // = hiddenLayers + 2
+    private int totalLayers = 0;
 
     public NeuralNetwork()
     {
@@ -54,7 +78,7 @@ public class NeuralNetwork {
     public NeuralNetwork(DNA dna)
     {
         List<float[][]> weightsDNA = dna.getDNA();
-        totalLayers = hiddenLayers + 2;// hidden layers + inputslayer+outputlayer
+        totalLayers = hiddenLayers + 2;// hidden layers + inputslayer + outputlayer
         //Initialize weights and the neurons array
         weights = new List<float[][]>();
         neurons = new List<List<float>>();

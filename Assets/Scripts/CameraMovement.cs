@@ -19,7 +19,7 @@ public class CameraMovement : MonoBehaviour {
 
     IEnumerator InitCamera()
     {
-        yield return new WaitForSeconds(0.1f); // chờ CarControllerAI tạo xe
+        yield return new WaitForEndOfFrame(); // chờ CarControllerAI tạo xe
         CarControllerAI controller = FindObjectOfType<CarControllerAI>();
         if (controller != null)
         {

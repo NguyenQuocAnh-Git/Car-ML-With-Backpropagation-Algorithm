@@ -5,9 +5,15 @@ using UnityEngine;
 public class DNA {
 
     private List<float[][]> dna;
-    private float mutationProb = 0.05f;
+    private float mutationProb = 0.09f;
     private float maxVariation = 1f;
     private float maxMutation = 5f;
+
+    public DNA()
+    {
+        var network = new NeuralNetwork();
+        dna = network.getWeights();
+    }
 
     public DNA(List<float[][]> weights)
     {
@@ -20,22 +26,35 @@ public class DNA {
     public DNA mutate()
     {
         List<float[][]> newDna = new List<float[][]>();
-        for(int i = 0; i < dna.Count; i++)
+
+        for (int i = 0; i < dna.Count; i++)
         {
-            float[][] weightsLayer = dna[i];
-            for(int j = 0; j < weightsLayer.Length; j++)
+            float[][] oldLayer = dna[i];
+            float[][] newLayer = new float[oldLayer.Length][];
+
+            for (int j = 0; j < oldLayer.Length; j++)
             {
-                for(int k=0;k< weightsLayer[j].Length; k++)
+                newLayer[j] = new float[oldLayer[j].Length];
+                for (int k = 0; k < oldLayer[j].Length; k++)
                 {
-                    float rand = Random.Range(0f, 1f);
-                    if(rand < mutationProb)
+                    // copy gốc
+                    float value = oldLayer[j][k];
+
+                    // xác suất đột biến
+                    if (Random.value < mutationProb)
                     {
-                        weightsLayer[j][k] = Random.Range(-maxVariation, maxVariation);
+                        value += Random.Range(-maxVariation, maxVariation);
+                        // clamp để tránh giá trị quá lớn
+                        value = Mathf.Clamp(value, -maxVariation, maxVariation);
                     }
+
+                    newLayer[j][k] = value;
                 }
             }
-            newDna.Add(weightsLayer);
+
+            newDna.Add(newLayer);
         }
+
         return new DNA(newDna);
     }
     //DNA of the class (parent) + DNA parameter (parent)

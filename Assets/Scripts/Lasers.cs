@@ -4,8 +4,9 @@ using UnityEngine;
 
 public class Lasers : MonoBehaviour {
     public Color colorBeam = new Color(0f, 1f, 0f, 1f); // Xanh lá cây (RGBA)
+    public Material laserMaterial;
     public int distanceLaser = 20;
-    public static int lasers = 5;
+    public static int lasers = 8;
     public static int view = 120; //In degrees
     public float height = 0;
 
@@ -26,7 +27,7 @@ public class Lasers : MonoBehaviour {
             laser.finalLength = 0.02f;
             laser.laserColor = colorBeam;
             laser.distanceLaser = distanceLaser;
-           
+            laser.laserMaterial = laserMaterial;
             laser.transform.position = new Vector3(transform.position.x, transform.position.y + height, transform.position.z);
 
             laserObjects[i] = obj;
@@ -40,7 +41,6 @@ public class Lasers : MonoBehaviour {
         float[] lasers = new float[laserObjects.Length];
         for(int i = 0; i < laserObjects.Length; i++)
         {
-
             lasers[i] = laserObjects[i].GetComponent<Laser>().getDistance();
         }
         return lasers;

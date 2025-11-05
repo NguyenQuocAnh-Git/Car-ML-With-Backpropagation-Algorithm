@@ -5,10 +5,12 @@ using UnityEngine;
 
 public static class SaveManager
 {
-    private static string filePath = Application.persistentDataPath + "/winners.json";
+    private static readonly string folderPath = Path.Combine(Application.dataPath, "DNA_Saver");
+    private static readonly string filePath = Path.Combine(folderPath, "winners.json");
+
 
     // Ghi DNA thủ công
-    public static void SaveWinners(DNA winner, DNA secWinner)
+    public static void SaveWinners(DNA winner, DNA secWinner, int generation)
     {
         if (winner == null || secWinner == null)
         {
@@ -16,10 +18,14 @@ public static class SaveManager
             return;
         }
 
-        string json = BuildDNAJson(winner, secWinner);
+        string json = BuildDNAJson(winner, secWinner, generation);
 
         try
         {
+            if (!Directory.Exists(folderPath))
+                Directory.CreateDirectory(folderPath);
+
+
             File.WriteAllText(filePath, json, Encoding.UTF8);
             Debug.Log($"SaveManager: Winners saved successfully at: {filePath}");
         }
@@ -29,10 +35,12 @@ public static class SaveManager
         }
     }
 
-    private static string BuildDNAJson(DNA w, DNA s)
+    private static string BuildDNAJson(DNA w, DNA s, int generation)
     {
         StringBuilder sb = new StringBuilder();
-        sb.Append("{\"winner\":");
+        sb.Append("{\"generation\":");
+        sb.Append(generation);
+        sb.Append(",{\"winner\":");
         sb.Append(DnaToJson(w));
         sb.Append(",\"secWinner\":");
         sb.Append(DnaToJson(s));
@@ -65,10 +73,11 @@ public static class SaveManager
     }
 
     // Đọc JSON thủ công
-    public static bool LoadWinners(out DNA winner, out DNA secWinner)
+    public static bool LoadWinners(out DNA winner, out DNA secWinner, out int generation)
     {
         winner = null;
         secWinner = null;
+        generation = 0;
 
         if (!File.Exists(filePath))
         {
@@ -79,7 +88,7 @@ public static class SaveManager
         try
         {
             string json = File.ReadAllText(filePath, Encoding.UTF8);
-            ParseWinners(json, out winner, out secWinner);
+            ParseWinners(json, out winner, out secWinner, out generation);
             Debug.Log($"SaveManager: Loaded winners successfully from {filePath}");
             return true;
         }
@@ -90,29 +99,48 @@ public static class SaveManager
         }
     }
 
-    private static void ParseWinners(string json, out DNA winner, out DNA secWinner)
+    private static void ParseWinners(string json, out DNA winner, out DNA secWinner, out int generation)
     {
         winner = null;
         secWinner = null;
+        generation = 0;
 
-        // Tách dữ liệu "winner": ... "secWinner": ...
-        int startW = json.IndexOf("[[");
-        int mid = json.IndexOf("],\"secWinner\":");
-        int startS = json.IndexOf("[[", mid);
-        int end = json.LastIndexOf("]");
-
-        if (startW == -1 || startS == -1)
+        try
         {
-            Debug.LogError("SaveManager: Invalid file structure.");
-            return;
+            // Lấy giá trị generation
+            int genIndex = json.IndexOf("\"generation\":");
+            if (genIndex >= 0)
+            {
+                int genStart = genIndex + "\"generation\":".Length;
+                int genEnd = json.IndexOf(",", genStart);
+                string genStr = json.Substring(genStart, genEnd - genStart);
+                int.TryParse(genStr.Trim(), out generation);
+            }
+
+            // Tách phần winner / secWinner như cũ
+            int startW = json.IndexOf("[[");
+            int mid = json.IndexOf("],\"secWinner\":");
+            int startS = json.IndexOf("[[", mid);
+            int end = json.LastIndexOf("]");
+
+            if (startW == -1 || startS == -1)
+            {
+                Debug.LogError("SaveManager: Invalid file structure.");
+                return;
+            }
+
+            string jsonWinner = json.Substring(startW, mid - startW);
+            string jsonSec = json.Substring(startS, end - startS);
+
+            winner = new DNA(ParseLayers(jsonWinner));
+            secWinner = new DNA(ParseLayers(jsonSec));
         }
-
-        string jsonWinner = json.Substring(startW, mid - startW);
-        string jsonSec = json.Substring(startS, end - startS);
-
-        winner = new DNA(ParseLayers(jsonWinner));
-        secWinner = new DNA(ParseLayers(jsonSec));
+        catch
+        {
+            Debug.LogError("SaveManager: Failed to parse generation or DNA.");
+        }
     }
+
 
     private static List<float[][]> ParseLayers(string text)
     {
@@ -142,10 +170,10 @@ public static class SaveManager
 
         // 🔧 Giờ ta nhóm neuron thành từng lớp dựa theo cấu trúc mạng hiện tại
         // Mạng hiện tại có 5 input, 10 hidden, 2 output => 2 lớp trọng số: 5x10 và 10x2
-        int inputs = 5;
-        int hidden = 10;
-        int outputs = 2;
-        int hiddenLayers = 1;
+        int inputs = NeuralNetwork.inputs;
+        int hidden = NeuralNetwork.size_hidden_layers;
+        int outputs = NeuralNetwork.outputs;
+        int hiddenLayers = NeuralNetwork.hiddenLayers;
 
         List<float[][]> layers = new List<float[][]>();
 

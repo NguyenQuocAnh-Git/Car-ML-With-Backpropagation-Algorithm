@@ -8,6 +8,8 @@ public class Laser : MonoBehaviour {
     public float finalLength = 0.02f;
     public float initialLength = 0.02f;
 
+    public Material laserMaterial;
+
     private Vector3 positionLaser;
     private LineRenderer lineRenderer;
     private float distance = 0;
@@ -21,7 +23,8 @@ public class Laser : MonoBehaviour {
         lineRenderer.startWidth = initialLength;
         lineRenderer.endWidth = finalLength;
         lineRenderer.positionCount = 2;
-
+        lineRenderer.material = laserMaterial;
+        lineRenderer.widthCurve = AnimationCurve.Linear(0, 0.2f, 1, 0.2f);
     }
 	
 	// Update is called once per frame

@@ -98,7 +98,7 @@ GameObject:
   - component: {fileID: 5460250310599270779}
   - component: {fileID: 7363764241741755970}
   m_Layer: 13
-  m_Name: Car Ai 1
+  m_Name: best car
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -275,7 +275,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a4607495735d9424eabdc5d80c29d1ab, type: 2}
+  - {fileID: 2100000, guid: d069dd4398675764291f9c82e7286e14, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
