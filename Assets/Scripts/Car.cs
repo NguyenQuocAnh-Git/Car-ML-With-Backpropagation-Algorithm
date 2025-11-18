@@ -17,8 +17,19 @@ public class Car : MonoBehaviour
     public int roundsPassed;
     private bool initialized;
 
+    public float currentProgress;
+    public float stuckDistanceThreshold = 5f;  // nếu trong 4.5s mà di chuyển < 5m → coi là kẹt/quay vòng
+    public float lastSignificantProgress = 0f;
+    public float timeSinceSignificantProgress = 0f;
+    public float stuckTimeLimit = 4.5f;        // 4.5 giây không đi xa hơn 5 đơn vị → chết
+    private float totalDistanceTraveled = 0f;
+    private CarMov carMov;
     // === Unity Methods ===
-    private void Start() { }
+    private void Start()
+    {
+        carMov = GetComponent<CarMov>();
+        InitializeCommon();
+    }
 
     private void Update()
     {
@@ -26,8 +37,34 @@ public class Car : MonoBehaviour
 
         UpdateStats();
         UpdateMovement();
-    }
 
+        // CheckIfStuck();
+    }
+    private void CheckIfStuck()
+    {
+        // float currentProgress;
+
+        // Cách 1: Dùng khoảng cách từ spawn (nếu track không có checkpoint)
+        // Nếu track chạy theo trục Z thì dùng cái này tốt hơn:
+        // float currentProgress = transform.position.z;
+
+        // Nếu xe đã di chuyển được thêm ít nhất X đơn vị so với lần kiểm tra trước → có tiến bộ
+        if (totalDistanceTraveled > lastSignificantProgress + 6f)  // đi thêm được 6m
+        {
+            lastSignificantProgress = totalDistanceTraveled;
+            timeSinceSignificantProgress = 0f;
+        }
+        else
+        {
+            timeSinceSignificantProgress += Time.deltaTime;
+        }
+
+        if (timeSinceSignificantProgress > 4.5f)
+        {
+            Debug.Log("Die ");
+            HandleCollision(); // xe quay vòng hoặc kẹt thật → chết
+        }
+    }
     private void OnTriggerEnter(Collider col)
     {
         switch (col.gameObject.tag)
@@ -35,7 +72,7 @@ public class Car : MonoBehaviour
             case "finish":
                 roundsPassed++;
                 fitness += 100; // Bonus khi hoàn thành vòng
-                if(roundsPassed >= 50)
+                if(roundsPassed >= 5)
                 {
                     SaveCarFinishRound();
                     break;
@@ -85,22 +122,27 @@ public class Car : MonoBehaviour
         timeAlive += Time.deltaTime;
         distance += Vector3.Distance(transform.position, lastPos);
         lastPos = transform.position;
+        totalDistanceTraveled += carMov.getCurrentSpeed() * Time.deltaTime;
     }
 
     private void UpdateMovement()
     {
         var lasers = GetComponent<Lasers>();
-        var carMov = GetComponent<CarMov>();
 
         float[] laserInputs = lasers.getDistances();
+        float leftSide = (laserInputs[0] + laserInputs[1]) / 2f;   // 2 laser trái nhất
+        float rightSide = (laserInputs[15] + laserInputs[16]) / 2f; // 2 laser phải nhất
+        float centerError = (leftSide - rightSide) / 10f;  // [-1, +1]: âm=lệch trái, dương=lệch phải
         float normSpeed = carMov.getNormalizedSpeed();
         float normRot = carMov.getNormalizedRotation();
 
         // Gộp tất cả input lại
-        float[] inputs = new float[laserInputs.Length + 2];
+        float[] inputs = new float[21];
+
         laserInputs.CopyTo(inputs, 0);
-        inputs[^2] = normSpeed;
-        inputs[^1] = normRot;
+        inputs[18] = centerError;     // input mới – cực kỳ quan trọng
+        inputs[19] = normSpeed;
+        inputs[20] = normRot;
 
         // Feed-forward và điều khiển
         network.feedForward(inputs);
@@ -114,8 +156,28 @@ public class Car : MonoBehaviour
     // === Fitness ===
     public float GetFitnessScore()
     {
-        fitness = distance * 1.5f + timeAlive * 1.2f;
-        return fitness;
+        float[] laserDistances = GetComponent<Lasers>().getDistances();
+        float centerBonus = 0f;
+
+        // 🔥 TÍNH BONUS ĐI GIỮA: so sánh laser trái vs phải
+        float leftAvg = (laserDistances[0] + laserDistances[1] + laserDistances[15] + laserDistances[16]) / 4f;
+        float rightAvg = (laserDistances[2] + laserDistances[3] + laserDistances[14]) / 3f;  // tùy index
+
+        float centerliness = 1f - Mathf.Abs(leftAvg - rightAvg) / Mathf.Max(leftAvg + rightAvg, 1f);
+        centerBonus = centerliness * 15f * Time.deltaTime;  // reward cao!
+
+        fitness += centerBonus;  // thêm vào fitness chính
+
+        float baseFitness = totalDistanceTraveled * 350f 
+                        + roundsPassed * 3000f 
+                        + carMov.getCurrentSpeed() * 5f
+                        + timeAlive * 0.05f; // rất thấp
+
+        // Penalty quay vòng tròn
+        if (carMov.getCurrentSpeed() < 3f && Mathf.Abs(carMov.vyRot) > 30f)
+            baseFitness -= 10f;
+
+        return baseFitness;
     }
 
     public DNA GetDNA() => dna;
@@ -125,12 +187,18 @@ public class Car : MonoBehaviour
     {
         var controller = GameObject.Find("CarController").GetComponent<CarControllerAI>();
         float score = GetFitnessScore();
+         List<GameObject> cars = controller.getCars();
 
         controller.TryUpdateGlobalBest(dna, score);
 
         // 🔥 Lưu ngay cá thể này
         SaveManager.SaveWinners(dna, controller.secWinner ?? dna, controller.generation);
+        cars.Remove(gameObject);
         Destroy(gameObject);
+        if(cars.Count == 0)
+        {
+            controller.restartGeneration();
+        }
     }
     private void HandleCollision()
     {

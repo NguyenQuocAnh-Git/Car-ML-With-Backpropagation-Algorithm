@@ -4,8 +4,9 @@ using UnityEngine;
 
 public class CarControllerAI : MonoBehaviour
 {
+    public List<GameObject> spawnPoints;
     public List<GameObject> cars;
-    public int population = 100;
+    public int population = 25;
     public int generation = 0;
     public GameObject car;
     public GameObject bestCar;
@@ -14,14 +15,15 @@ public class CarControllerAI : MonoBehaviour
     public DNA secWinner;
     private int carsCreated = 0;
 
-
     public DNA globalBest;
     public float globalBestScore = float.MinValue;
 
-
+    public int map;
+    public int maxMap = 2;
     // Use this for initialization
     void Start()
     {
+        map = 0;
         // At start, load saved winners if available
         bool ok = SaveManager.LoadWinners(out DNA first,out DNA second, out int generationOut);
         if (ok)
@@ -38,11 +40,24 @@ public class CarControllerAI : MonoBehaviour
             newPopulation();
         }
     }
-
+    public void StartNewGenWithDataSaved()
+    {
+        bool ok = SaveManager.LoadWinners(out DNA first,out DNA second, out int generationOut);
+        if (ok)
+        {
+            this.winner = first;
+            this.secWinner = second;
+            this.generation = generationOut;
+            Debug.Log($"Generation : {generationOut}");
+            globalBest = winner; // save later
+            newPopulationAtStart();
+            Debug.Log("CarControllerAI: Loaded saved winners at start.");
+        }
+    }
     // Update is called once per frame
     void Update()
     {
-
+        
     }
     public void TryUpdateGlobalBest(DNA candidate, float candidateScore)
     {
@@ -62,7 +77,8 @@ public class CarControllerAI : MonoBehaviour
         cars = new List<GameObject>();
         for (int i = 0; i < population; i++)
         {
-            GameObject carObj = (Instantiate(car));
+            // var random = Random.Range(0,2);
+            GameObject carObj = Instantiate(car, spawnPoints[map].transform.position, Quaternion.identity);
             cars.Add(carObj);
             carObj.GetComponent<Car>().Initialize();
         }
@@ -85,7 +101,8 @@ public class CarControllerAI : MonoBehaviour
                 newDna = winner.crossover(secWinner);
                 newDna = newDna.mutate();
             }
-            GameObject carObj = Instantiate(car);
+            // var random = Random.Range(0,2);
+            GameObject carObj = Instantiate(car, spawnPoints[map].transform.position, Quaternion.identity);
             cars.Add(carObj);
             carObj.GetComponent<Car>().Initialize(newDna);
         }
@@ -99,11 +116,14 @@ public class CarControllerAI : MonoBehaviour
     // Called to create new generation using crossover of winner & secWinner
     public void newPopulation(bool geneticManipulation)
     {
-        if (geneticManipulation && globalBest != null)
+        if (geneticManipulation)
         {
-            GameObject _bestCar = Instantiate(bestCar);
-            _bestCar.GetComponent<Car>().Initialize(globalBest);
-            cars.Add(_bestCar);
+            if(globalBest != null)
+            {
+                GameObject _bestCar = Instantiate(bestCar, spawnPoints[map].transform.position, Quaternion.identity);
+                _bestCar.GetComponent<Car>().Initialize(globalBest);
+                cars.Add(_bestCar);
+            }
 
             if (winner == null || secWinner == null)
             {
@@ -127,7 +147,8 @@ public class CarControllerAI : MonoBehaviour
                     newDna = winner.crossover(secWinner);
                     newDna = newDna.mutate();
                 }
-                GameObject carObj = Instantiate(car);
+                // var random = Random.Range(0,2);
+                GameObject carObj = Instantiate(car, spawnPoints[map].transform.position, Quaternion.identity);
                 cars.Add(carObj);
                 carObj.GetComponent<Car>().Initialize(newDna);
             }
@@ -142,8 +163,12 @@ public class CarControllerAI : MonoBehaviour
 
     public void restartGeneration()
     {
-        cars.Clear();
-        newPopulation();
+        map++;
+        if(map == maxMap)
+        {
+            map = 0;
+        }
+        StartNewGenWithDataSaved();
     }
 
     // PUBLIC method to load winners from file and spawn a population using them

@@ -7,7 +7,6 @@ public class Laser : MonoBehaviour {
     public float distanceLaser = 50;
     public float finalLength = 0.02f;
     public float initialLength = 0.02f;
-
     public Material laserMaterial;
 
     private Vector3 positionLaser;
@@ -31,12 +30,13 @@ public class Laser : MonoBehaviour {
 	void Update () {
         Vector3 finalPoint = transform.position + transform.forward * distanceLaser;
         RaycastHit collisionPoint;
-        if(Physics.Raycast(transform.position,transform.forward,out collisionPoint, distanceLaser))
+        int layerToIgnore = LayerMask.NameToLayer("Finish");
+        int mask = ~(1 << layerToIgnore);
+        if(Physics.Raycast(transform.position,transform.forward,out collisionPoint, distanceLaser, mask))
         {
             lineRenderer.SetPosition(0, transform.position);
             lineRenderer.SetPosition(1, collisionPoint.point);
             distance = collisionPoint.distance;
-
         }
         else
         {

@@ -40,7 +40,7 @@ public static class SaveManager
         StringBuilder sb = new StringBuilder();
         sb.Append("{\"generation\":");
         sb.Append(generation);
-        sb.Append(",{\"winner\":");
+        sb.Append(",\"winner\":");
         sb.Append(DnaToJson(w));
         sb.Append(",\"secWinner\":");
         sb.Append(DnaToJson(s));
@@ -144,11 +144,6 @@ public static class SaveManager
 
     private static List<float[][]> ParseLayers(string text)
     {
-        // Cấu trúc JSON thực tế là một danh sách các neuron, không phải danh sách các lớp.
-        // Mỗi neuron là một mảng trọng số. Ta phải gom chúng theo kích thước lớp thực tế.
-        text = text.Trim('[', ']');
-
-        // Bóc tách từng neuron riêng biệt
         List<float[]> neurons = new List<float[]>();
         string[] neuronGroups = text.Split(new string[] { "],[" }, System.StringSplitOptions.RemoveEmptyEntries);
 
@@ -157,47 +152,52 @@ public static class SaveManager
             string clean = neuronStr.Replace("[", "").Replace("]", "");
             string[] nums = clean.Split(',');
             List<float> weights = new List<float>();
-
             foreach (string n in nums)
             {
                 if (float.TryParse(n, out float val))
                     weights.Add(val);
             }
-
             if (weights.Count > 0)
                 neurons.Add(weights.ToArray());
         }
 
-        // 🔧 Giờ ta nhóm neuron thành từng lớp dựa theo cấu trúc mạng hiện tại
-        // Mạng hiện tại có 5 input, 10 hidden, 2 output => 2 lớp trọng số: 5x10 và 10x2
+        // Nhóm neurons thành layer dựa theo mạng
+        List<float[][]> layers = new List<float[][]>();
         int inputs = NeuralNetwork.inputs;
         int hidden = NeuralNetwork.size_hidden_layers;
-        int outputs = NeuralNetwork.outputs;
         int hiddenLayers = NeuralNetwork.hiddenLayers;
+        int outputs = NeuralNetwork.outputs;
 
-        List<float[][]> layers = new List<float[][]>();
+        int index = 0;
 
-        // Lớp 1: input → hidden (5x10)
-        if (neurons.Count >= inputs)
+        // Input layer → hidden 1
+        if (neurons.Count >= index + inputs)
         {
-            float[][] layer1 = new float[inputs][];
+            float[][] layer = new float[inputs][];
             for (int i = 0; i < inputs; i++)
-            {
-                // neuron[i] chứa 10 giá trị
-                layer1[i] = neurons[i];
-            }
-            layers.Add(layer1);
+                layer[i] = neurons[index++];
+            layers.Add(layer);
         }
 
-        // Lớp 2: hidden → output (10x2)
-        if (neurons.Count >= inputs + hidden)
+        // Hidden layers
+        for (int h = 0; h < hiddenLayers; h++)
         {
-            float[][] layer2 = new float[hidden][];
-            for (int i = 0; i < hidden; i++)
+            if (neurons.Count >= index + hidden)
             {
-                layer2[i] = neurons[inputs + i];
+                float[][] layer = new float[hidden][];
+                for (int i = 0; i < hidden; i++)
+                    layer[i] = neurons[index++];
+                layers.Add(layer);
             }
-            layers.Add(layer2);
+        }
+
+        // Output layer
+        if (neurons.Count >= index + outputs)
+        {
+            float[][] layer = new float[outputs][];
+            for (int i = 0; i < outputs; i++)
+                layer[i] = neurons[index++];
+            layers.Add(layer);
         }
 
         return layers;

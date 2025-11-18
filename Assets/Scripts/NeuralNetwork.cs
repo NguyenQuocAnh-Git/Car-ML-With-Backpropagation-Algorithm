@@ -6,19 +6,19 @@ public class NeuralNetwork {
 
     // Số lượng tầng ẩn (hidden layers) trong mạng
     // 1 nghĩa là chỉ có 1 hidden layer giữa input và output
-    public static int hiddenLayers = 1;
+    public static int hiddenLayers = 2;
 
     // Số neuron trong mỗi tầng ẩn
     // Ví dụ: nếu =10 thì mỗi hidden layer có 10 neuron
-    public  static int size_hidden_layers = 10;
+    public  static int size_hidden_layers = 16;
 
     // Số lượng đầu ra của mạng
     // Ví dụ: 2 nếu điều khiển xe thì có thể là [xoay vô-lăng, tăng tốc]
     public static int outputs = 2;
 
     // Số lượng đầu vào của mạng
-    // 8 raycast + Velocity(car) + rotation(car)
-    public static int inputs = 10;
+    // 18 raycast + Velocity(car) + rotation(car) + front laze
+    public static int inputs = 21;
 
     // Giá trị cực đại khi khởi tạo trọng số ngẫu nhiên
     // Mỗi weight sẽ nằm trong khoảng [-maxInitialValue, +maxInitialValue]

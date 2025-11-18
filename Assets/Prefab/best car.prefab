@@ -134,8 +134,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   colorBeam: {r: 0, g: 1, b: 0, a: 1}
   laserMaterial: {fileID: 10306, guid: 0000000000000000f000000000000000, type: 0}
-  distanceLaser: 15
-  height: 0.01
+  distanceLaser: 40
+  height: 0.2
 --- !u!54 &3562427261402797783
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -196,11 +196,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45bfc611ad011ad47a11a2617d73310d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speedLinear: 20
+  vyRot: 0
+  speedLinear: 10
   speedRotation: 80
+  acceleration: 0
   activeAcceleration: 1
-  maxSpeed: 10
+  maxSpeed: 12
+  minSpeed: 2
   maxRotation: 90
+  currentSpeed: 0
+  currentRotation: 0
 --- !u!114 &7363764241741755970
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -214,6 +219,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   roundsPassed: 0
+  currentProgress: 0
+  stuckDistanceThreshold: 5
+  lastSignificantProgress: 0
+  timeSinceSignificantProgress: 0
+  stuckTimeLimit: 4.5
 --- !u!1 &3050389347919054524
 GameObject:
   m_ObjectHideFlags: 0
