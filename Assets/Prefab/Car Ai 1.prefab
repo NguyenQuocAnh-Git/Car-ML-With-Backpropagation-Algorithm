@@ -198,7 +198,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vyRot: 0
   speedLinear: 10
-  speedRotation: 80
+  speedRotation: 100
   acceleration: 0
   activeAcceleration: 1
   maxSpeed: 12

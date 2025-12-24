@@ -199,6 +199,8 @@ public class Car : MonoBehaviour
         {
             controller.restartGeneration();
         }
+        // Đổi camera theo random xe khác
+        FollowRandomCar(controller, cars);
     }
     private void HandleCollision()
     {

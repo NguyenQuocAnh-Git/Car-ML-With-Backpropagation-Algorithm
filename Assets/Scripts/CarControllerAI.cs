@@ -169,6 +169,7 @@ public class CarControllerAI : MonoBehaviour
             map = 0;
         }
         StartNewGenWithDataSaved();
+
     }
 
     // PUBLIC method to load winners from file and spawn a population using them
